@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protected Login Form - SQL Injection Protection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 100px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .security {
+            background-color: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .protection-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .protection-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="security">
+            🛡️ SECURE: This login form is protected against SQL injection attacks using 
+            multiple security measures including input validation and ModSecurity WAF.
+        </div>
+        
+        <h2>Protected Login Form</h2>
+        
+        <form action="protected_login.php" method="POST">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required 
+                       pattern="[a-zA-Z0-9_]{3,20}" 
+                       title="Username must be 3-20 characters, letters, numbers, and underscores only">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required
+                       minlength="6">
+            </div>
+            
+            <button type="submit">Login</button>
+        </form>
+        
+        <div class="info">
+            <h4>Security Features Implemented:</h4>
+            <ul class="protection-list">
+                <li>✅ Prepared statements (parameterized queries)</li>
+                <li>✅ Input validation and sanitization</li>
+                <li>✅ ModSecurity WAF rules</li>
+                <li>✅ OWASP Core Rule Set (CRS)</li>
+                <li>✅ SQL injection pattern detection</li>
+                <li>✅ Rate limiting</li>
+                <li>✅ CSRF protection</li>
+            </ul>
+            
+            <p><strong>Test it:</strong> Try the same SQL injection payloads that worked 
+            on the vulnerable form. They should be blocked by the WAF and backend validation.</p>
+            
+            <p><a href="page1.html">← Back to vulnerable version</a></p>
+        </div>
+    </div>
+</body>
+</html>

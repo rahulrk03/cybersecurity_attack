@@ -205,3 +205,27 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Cybersecurity Demo - Application specific
+*.log
+logs/
+vulnerable_log.txt
+protected_log.txt
+attack_log.txt
+rate_limit_*.txt
+
+# Apache/Web server logs
+access.log
+error.log
+modsec_audit.log
+php_errors.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Database backups
+*.sql.bak
+*.sql.backup
