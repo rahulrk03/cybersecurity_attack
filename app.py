@@ -8,8 +8,7 @@ DO NOT use in production environments.
 """
 
 from flask import Flask, request, render_template_string, session, jsonify
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 import hashlib
 import re
 import time
@@ -23,12 +22,7 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)  # Generate a secure secret key
 
 # Database configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'cybersecurity_demo',
-    'user': 'demo_user',
-    'password': 'demo_password'
-}
+DB_PATH = 'cybersecurity_demo.db'
 
 # Rate limiting configuration
 MAX_ATTEMPTS = 5
@@ -37,10 +31,11 @@ LOCKOUT_TIME = 300  # 5 minutes in seconds
 def get_db_connection():
     """Create and return a database connection"""
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
+        connection = sqlite3.connect(DB_PATH)
+        connection.row_factory = sqlite3.Row  # Enable dict-like access to rows
         return connection
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
+    except Exception as e:
+        print(f"Error connecting to SQLite: {e}")
         return None
 
 def log_message(filename, message):
@@ -315,7 +310,7 @@ def vulnerable_login():
         message = "<div class='error'>❌ Database connection failed.</div>"
     else:
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             
             # VULNERABLE CODE: Direct string concatenation without sanitization
             # This allows SQL injection attacks
@@ -325,7 +320,7 @@ def vulnerable_login():
             results = cursor.fetchall()
             
             if results:
-                user = results[0]
+                user = dict(results[0])  # Convert sqlite3.Row to dict
                 message = f"<div class='success'>✅ Login successful! Welcome, {user['username']}!</div>"
                 
                 # If more than one row returned, it might be an injection attack
@@ -335,11 +330,11 @@ def vulnerable_login():
             else:
                 message = "<div class='error'>❌ Invalid username or password.</div>"
                 
-        except mysql.connector.Error as e:
+        except Exception as e:
             message = f"<div class='error'>❌ Database error: {str(e)}</div>"
             attack_detected = True
         finally:
-            if connection.is_connected():
+            if connection:
                 cursor.close()
                 connection.close()
         
@@ -648,12 +643,13 @@ def protected_login():
         return render_protected_result(message, injection_attempt, False, False)
     
     try:
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor()
         
         # Use parameterized query to prevent SQL injection
-        sql_query = "SELECT id, username, password FROM users WHERE username = %s LIMIT 1"
+        sql_query = "SELECT id, username, password FROM users WHERE username = ? LIMIT 1"
         cursor.execute(sql_query, (username,))
-        user = cursor.fetchone()
+        result = cursor.fetchone()
+        user = dict(result) if result else None
         
         if user:
             # Check if password is hashed or plain text (for demo purposes)
@@ -692,11 +688,11 @@ def protected_login():
             # Log failed attempt
             log_message('protected_log.txt', f"Failed login attempt for user: {username} from IP: {client_ip}")
             
-    except mysql.connector.Error as e:
+    except Exception as e:
         message = "<div class='error'>❌ System error. Please try again later.</div>"
         print(f"Database error: {e}")
     finally:
-        if connection.is_connected():
+        if connection:
             cursor.close()
             connection.close()
     

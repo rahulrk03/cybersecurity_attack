@@ -40,7 +40,6 @@ Before starting, ensure you have:
    - Create security group with following rules:
      - SSH (22): Your IP only
      - HTTP (5000): 0.0.0.0/0 (Flask default port)
-     - MySQL (3306): Security group only (for internal access)
 
 4. **Storage**
    - 8 GB gp2 (Free Tier eligible)
@@ -64,9 +63,9 @@ sudo apt update && sudo apt upgrade -y
 ### Step 3: Install Required Packages
 
 ```bash
-# Install Python, MySQL, and development tools
-sudo apt install -y python3 python3-pip python3-venv mysql-server git curl wget
-sudo apt install -y build-essential python3-dev default-libmysqlclient-dev pkg-config
+# Install Python and development tools (MySQL no longer required)
+sudo apt install -y python3 python3-pip python3-venv git curl wget
+sudo apt install -y build-essential python3-dev pkg-config
 
 # Verify Python installation
 python3 --version
@@ -98,36 +97,21 @@ curl http://localhost
 
 ## Database Configuration
 
-## Database Configuration
-
-### Step 5: Secure MySQL Installation
-
-```bash
-# Run MySQL security script
-sudo mysql_secure_installation
-
-# Follow prompts:
-# - Set root password: YES (choose strong password)
-# - Remove anonymous users: YES
-# - Disallow root login remotely: YES
-# - Remove test database: YES
-# - Reload privilege tables: YES
-```
-
-### Step 6: Setup Database with Python Script
+### Step 5: Setup SQLite Database with Python Script
 
 ```bash
 # Navigate to application directory
 cd /opt/cybersecurity_attack
 source venv/bin/activate
 
-# Run the database setup script
+# Run the database setup script (no additional setup required for SQLite)
 python3 setup_database.py
 
-# Enter your MySQL root password when prompted
 # The script will:
-# - Create the cybersecurity_demo database
-# - Create the demo_user with appropriate permissions
+# - Create the cybersecurity_demo.db SQLite database file
+# - Create necessary tables (users, login_attempts, security_events)
+# - Insert sample data for testing
+```
 # - Create necessary tables (users, login_attempts, security_events)
 # - Insert sample data for testing
 ```
@@ -336,11 +320,12 @@ sudo tail -f /var/log/apache2/php_errors.log
 
 3. **Database connection issues**
    ```bash
-   # Test MySQL connection
-   mysql -u demo_user -p cybersecurity_demo
+   # Check if SQLite database file exists and is readable
+   ls -la /opt/cybersecurity_attack/cybersecurity_demo.db
    
-   # Check MySQL status
-   sudo systemctl status mysql
+   # Recreate database if needed
+   cd /opt/cybersecurity_attack
+   python3 setup_database.py
    ```
 
 4. **Permission issues**
@@ -372,7 +357,7 @@ When you're done with the demonstration:
 ```bash
 # Stop services
 sudo systemctl stop apache2
-sudo systemctl stop mysql
+# Note: No MySQL service to stop (using SQLite)
 
 # In AWS Console, terminate the EC2 instance to avoid charges
 ```

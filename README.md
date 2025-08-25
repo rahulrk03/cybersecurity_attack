@@ -29,7 +29,7 @@ cybersecurity_attack/
 ├── test_app.py                  # Automated testing script
 ├── requirements.txt             # Python dependencies
 ├── PYTHON_GUIDE.md              # Quick start guide for beginners
-├── database_setup.sql           # MySQL database setup script (legacy)
+├── database_setup.sql           # Legacy MySQL setup script (deprecated - use setup_database.py)
 ├── modsecurity_rules.conf       # ModSecurity WAF rules
 ├── apache_config.conf           # Apache virtual host configuration
 ├── aws_deployment_guide.md      # AWS deployment guide
@@ -76,8 +76,8 @@ After completing this project, you will understand:
 ### Prerequisites
 
 1. **Python 3.7+** installed
-2. **MySQL** server running
-3. **Git** for cloning the repository
+2. **Git** for cloning the repository
+3. **SQLite** (built into Python - no separate installation needed)
 
 ### Installation
 
@@ -96,8 +96,8 @@ After completing this project, you will understand:
    ```bash
    python3 setup_database.py
    ```
-   - Enter your MySQL root password when prompted
-   - The script will create the database, user, and sample data
+   - The script will create the SQLite database file and sample data
+   - No additional database server setup required
 
 4. **Run the Flask application**:
    ```bash
@@ -232,7 +232,7 @@ This project is perfect for:
 - [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [Flask Security Documentation](https://flask.palletsprojects.com/en/2.3.x/security/)
 - [Python Security Best Practices](https://python.org/dev/security/)
-- [MySQL Connector Python Documentation](https://dev.mysql.com/doc/connector-python/en/)
+- [SQLite Documentation](https://docs.python.org/3/library/sqlite3.html)
 
 ## 🐛 Troubleshooting
 
@@ -240,10 +240,11 @@ This project is perfect for:
 
 1. **Database Connection Error**:
    ```bash
-   # Check MySQL is running
-   sudo systemctl status mysql
+   # Check if database file exists
+   ls -la cybersecurity_demo.db
    
-   # Verify credentials in setup_database.py
+   # Recreate database if needed
+   python3 setup_database.py
    ```
 
 2. **Permission Denied**:
