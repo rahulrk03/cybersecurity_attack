@@ -1,15 +1,14 @@
-# Cybersecurity Attack Demonstration
+# Cybersecurity Attack Demonstration (Python/Flask)
 
-A comprehensive demonstration of SQL injection vulnerabilities and their mitigation using ModSecurity WAF, designed for educational purposes and cybersecurity training.
+A comprehensive demonstration of SQL injection vulnerabilities and their mitigation, designed for educational purposes and cybersecurity training. This project has been converted from PHP to Python using Flask for easier understanding and learning.
 
 ## 🎯 Project Overview
 
 This project demonstrates the difference between vulnerable and secure web applications, specifically focusing on SQL injection attacks and their prevention. It includes:
 
-- **Vulnerable login form** (`page1.html`) - Intentionally exploitable via SQL injection
-- **Protected login form** (`page2.html`) - Secured with multiple protection layers
-- **Complete AWS deployment guide** - Step-by-step instructions for EC2 setup
-- **ModSecurity WAF configuration** - Web Application Firewall rules for protection
+- **Vulnerable login endpoint** (`/vulnerable`) - Intentionally exploitable via SQL injection
+- **Protected login endpoint** (`/protected`) - Secured with multiple protection layers
+- **Flask web application** - Easy-to-understand Python code for beginners
 - **Comprehensive documentation** - For learning and implementation
 
 ## 🚨 Security Notice
@@ -25,16 +24,29 @@ This project demonstrates the difference between vulnerable and secure web appli
 
 ```
 cybersecurity_attack/
-├── page1.html                  # Vulnerable login form
-├── page2.html                  # Protected login form
-├── vulnerable_login.php        # Backend with SQL injection vulnerability
-├── protected_login.php         # Secure backend with protection
-├── database_setup.sql          # MySQL database setup script
-├── modsecurity_rules.conf      # Custom ModSecurity WAF rules
-├── apache_config.conf          # Apache virtual host configuration
-├── aws_deployment_guide.md     # Complete AWS deployment guide
-└── README.md                   # This file
+├── app.py                       # Main Flask application
+├── setup_database.py            # Database setup script
+├── requirements.txt             # Python dependencies
+├── database_setup.sql           # MySQL database setup script (legacy)
+├── vulnerable_login.php         # Legacy PHP vulnerable backend
+├── protected_login.php          # Legacy PHP secure backend
+├── page1.html                   # Legacy HTML form (now integrated)
+├── page2.html                   # Legacy HTML form (now integrated)
+├── modsecurity_rules.conf       # ModSecurity WAF rules
+├── apache_config.conf           # Apache virtual host configuration
+├── aws_deployment_guide.md      # AWS deployment guide
+└── README.md                    # This file
 ```
+
+## 🐍 Why Python?
+
+This project has been converted from PHP to Python/Flask because:
+
+- **Beginner-friendly**: Python has cleaner, more readable syntax
+- **Educational value**: Easier to understand for new programmers
+- **Industry standard**: Python is widely used in cybersecurity
+- **Flask simplicity**: Minimal framework that's easy to learn
+- **Better documentation**: Python code is more self-documenting
 
 ## 🎯 Learning Objectives
 
@@ -48,29 +60,27 @@ After completing this project, you will understand:
 2. **Security Mitigation Techniques**
    - Prepared statements and parameterized queries
    - Input validation and sanitization
-   - Web Application Firewall (WAF) protection
+   - Rate limiting and CSRF protection
 
-3. **AWS Deployment Skills**
-   - EC2 instance configuration
-   - Apache web server setup
-   - MySQL database configuration
-   - Security group management
+3. **Python Web Development**
+   - Flask framework basics
+   - Database connections with Python
+   - Security best practices in Python
 
-4. **ModSecurity WAF Configuration**
-   - OWASP Core Rule Set (CRS)
-   - Custom rule creation
-   - Log analysis and monitoring
+4. **Cybersecurity Fundamentals**
+   - Attack detection and logging
+   - Defense-in-depth strategies
+   - Secure coding practices
 
 ## 🚀 Quick Start
 
-### Option 1: AWS Deployment (Recommended)
+### Prerequisites
 
-1. **Follow the complete deployment guide**: [`aws_deployment_guide.md`](aws_deployment_guide.md)
-2. **Access your deployed application**:
-   - Vulnerable: `http://YOUR_EC2_IP/page1.html`
-   - Protected: `http://YOUR_EC2_IP/page2.html`
+1. **Python 3.7+** installed
+2. **MySQL** server running
+3. **Git** for cloning the repository
 
-### Option 2: Local Development
+### Installation
 
 1. **Clone the repository**:
    ```bash
@@ -78,22 +88,32 @@ After completing this project, you will understand:
    cd cybersecurity_attack
    ```
 
-2. **Set up LAMP stack** (Linux, Apache, MySQL, PHP)
-
-3. **Import database**:
+2. **Install Python dependencies**:
    ```bash
-   mysql -u root -p < database_setup.sql
+   pip3 install -r requirements.txt
    ```
 
-4. **Configure Apache** using `apache_config.conf`
+3. **Set up the database**:
+   ```bash
+   python3 setup_database.py
+   ```
+   - Enter your MySQL root password when prompted
+   - The script will create the database, user, and sample data
 
-5. **Set up ModSecurity** using `modsecurity_rules.conf`
+4. **Run the Flask application**:
+   ```bash
+   python3 app.py
+   ```
+
+5. **Access the application**:
+   - Open your browser to `http://localhost:5000`
+   - Navigate to the vulnerable or protected forms
 
 ## 🧪 Testing the Vulnerability
 
 ### SQL Injection Test Payloads
 
-Try these on the **vulnerable form** (`page1.html`):
+Try these on the **vulnerable form** (`http://localhost:5000/vulnerable`):
 
 ```sql
 -- Authentication bypass
@@ -110,15 +130,15 @@ admin' AND 1=2 --
 
 ### Expected Results
 
-**Vulnerable Form (page1.html)**:
+**Vulnerable Form (`/vulnerable`)**:
 - ✅ SQL injection payloads should work
 - ✅ Authentication bypass should succeed
 - ✅ Error messages may reveal database structure
 
-**Protected Form (page2.html)**:
+**Protected Form (`/protected`)**:
 - ❌ SQL injection attempts should be blocked
-- ❌ ModSecurity WAF should trigger alerts
 - ❌ Input validation should prevent malicious input
+- ❌ Prepared statements prevent database manipulation
 
 ## 🛡️ Security Features Implemented
 
@@ -126,31 +146,62 @@ admin' AND 1=2 --
 - Direct SQL query concatenation
 - No input validation
 - No prepared statements
-- No WAF protection
+- No rate limiting
 
 ### Protected Form Security: ✅ COMPREHENSIVE
 - **Prepared Statements**: Prevents SQL injection
 - **Input Validation**: Validates format and length
-- **ModSecurity WAF**: Blocks malicious requests
 - **Rate Limiting**: Prevents brute force attacks
 - **CSRF Protection**: Protects against cross-site requests
-- **Security Headers**: XSS, clickjacking protection
+- **Attack Detection**: Identifies and logs malicious patterns
 - **Error Handling**: Prevents information disclosure
+
+## 🔍 Code Structure
+
+### app.py - Main Application
+
+The Flask application contains:
+
+```python
+# Vulnerable endpoint (educational)
+@app.route('/vulnerable_login', methods=['POST'])
+def vulnerable_login():
+    # DELIBERATELY INSECURE CODE
+    sql_query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    # Direct string concatenation - VULNERABLE!
+
+# Protected endpoint (secure)
+@app.route('/protected_login', methods=['POST'])
+def protected_login():
+    # SECURE CODE WITH MULTIPLE PROTECTIONS
+    cursor.execute("SELECT id, username, password FROM users WHERE username = %s LIMIT 1", (username,))
+    # Parameterized query - SECURE!
+```
+
+### Key Security Differences
+
+| Feature | Vulnerable Version | Protected Version |
+|---------|-------------------|-------------------|
+| SQL Queries | String concatenation | Prepared statements |
+| Input Validation | None | Regex validation |
+| Rate Limiting | None | IP-based limiting |
+| CSRF Protection | None | Token-based |
+| Attack Logging | Basic | Comprehensive |
+| Error Handling | Detailed errors | Generic messages |
 
 ## 📊 Monitoring and Logging
 
-The application includes comprehensive logging:
+The application creates several log files:
 
 ```bash
-# Application logs
-tail -f /var/log/apache2/cybersecurity_demo_access.log
-tail -f /var/log/apache2/cybersecurity_demo_error.log
+# View attack attempts
+tail -f vulnerable_log.txt
 
-# ModSecurity WAF logs
-tail -f /var/log/apache2/modsec_audit.log
+# View security events
+tail -f protected_log.txt  
 
-# Attack attempt logs
-tail -f /var/www/html/cybersecurity_attack/logs/attack_log.txt
+# View potential attacks
+tail -f attack_log.txt
 ```
 
 ## 🎓 Educational Use Cases
@@ -158,31 +209,56 @@ tail -f /var/www/html/cybersecurity_attack/logs/attack_log.txt
 This project is perfect for:
 
 - **Cybersecurity training courses**
-- **Penetration testing practice**
+- **Python programming education**
 - **Web application security workshops**
-- **DevSecOps demonstrations**
+- **Penetration testing practice**
 - **Security awareness training**
 
 ## 🔧 Customization
 
 ### Adding New Attack Vectors
 
-1. **Modify vulnerable_login.php** to introduce new vulnerabilities
-2. **Update modsecurity_rules.conf** with corresponding protection rules
-3. **Add test cases** in the HTML forms
+1. **Modify the vulnerable endpoint** to introduce new vulnerabilities
+2. **Update the protected endpoint** with corresponding protections
+3. **Add detection patterns** in the `detect_sql_injection()` function
 
 ### Extending Protection
 
-1. **Add more ModSecurity rules** for different attack types
-2. **Implement additional validation** in protected_login.php
-3. **Configure fail2ban** for IP-based blocking
+1. **Add more validation rules** in the protected login function
+2. **Implement additional logging** for different attack types
+3. **Add new security headers** and protections
 
 ## 📚 Additional Resources
 
 - [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
-- [ModSecurity Reference Manual](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual)
-- [OWASP Core Rule Set Documentation](https://coreruleset.org/)
-- [AWS EC2 User Guide](https://docs.aws.amazon.com/ec2/index.html)
+- [Flask Security Documentation](https://flask.palletsprojects.com/en/2.3.x/security/)
+- [Python Security Best Practices](https://python.org/dev/security/)
+- [MySQL Connector Python Documentation](https://dev.mysql.com/doc/connector-python/en/)
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Error**:
+   ```bash
+   # Check MySQL is running
+   sudo systemctl status mysql
+   
+   # Verify credentials in setup_database.py
+   ```
+
+2. **Permission Denied**:
+   ```bash
+   # Ensure proper file permissions
+   chmod +x setup_database.py
+   chmod +x app.py
+   ```
+
+3. **Module Not Found**:
+   ```bash
+   # Reinstall dependencies
+   pip3 install -r requirements.txt
+   ```
 
 ## 🤝 Contributing
 
@@ -206,8 +282,21 @@ This software is provided for educational purposes only. The authors are not res
 
 For questions or support:
 - Create an issue in this repository
-- Review the troubleshooting section in the deployment guide
+- Review the troubleshooting section above
 
 ---
 
 **Remember**: Always practice ethical hacking and responsible disclosure!
+
+## 🆚 PHP vs Python Comparison
+
+| Aspect | PHP Version | Python Version |
+|--------|-------------|----------------|
+| Syntax | `<?php ... ?>` | Clean Python syntax |
+| Database | `$pdo->query($sql)` | `cursor.execute(sql, params)` |
+| Variables | `$username` | `username` |
+| Arrays | `$_POST['field']` | `request.form.get('field')` |
+| Learning Curve | Steeper for beginners | Gentler for new programmers |
+| Security Libraries | Built-in PDO | SQLAlchemy, Werkzeug |
+
+The Python version maintains all the security features and educational value while being more accessible to newcomers to programming.
