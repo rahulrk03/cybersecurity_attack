@@ -1,24 +1,22 @@
-# AWS Deployment Guide - Cybersecurity Attack Demo
+# AWS Deployment Guide - Cybersecurity Attack Demo (Python/Flask)
 
-This guide provides step-by-step instructions for deploying the cybersecurity attack demonstration on AWS EC2.
+This guide provides step-by-step instructions for deploying the Python/Flask cybersecurity attack demonstration on AWS EC2.
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
-2. [EC2 Instance Setup](#ec2-instance-setup)
-3. [Software Installation](#software-installation)
+2. [EC2 Instance Setup](#ec2-instance-setup)  
+3. [Python/Flask Installation](#python-flask-installation)
 4. [Database Configuration](#database-configuration)
-5. [Web Server Configuration](#web-server-configuration)
-6. [ModSecurity WAF Setup](#modsecurity-waf-setup)
-7. [Application Deployment](#application-deployment)
-8. [Testing and Verification](#testing-and-verification)
-9. [Security Considerations](#security-considerations)
-10. [Troubleshooting](#troubleshooting)
+5. [Application Deployment](#application-deployment)
+6. [Testing and Verification](#testing-and-verification)
+7. [Security Considerations](#security-considerations)
+8. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
 Before starting, ensure you have:
 - AWS account with EC2 access
-- Basic knowledge of Linux command line
+- Basic knowledge of Linux command line and Python
 - SSH client (PuTTY for Windows, Terminal for Mac/Linux)
 - Git installed locally (for cloning this repository)
 
@@ -32,7 +30,7 @@ Before starting, ensure you have:
 
 2. **Configure Instance**
    ```
-   Name: cybersecurity-demo
+   Name: cybersecurity-flask-demo
    Application and OS Images: Ubuntu Server 22.04 LTS (Free Tier)
    Instance Type: t2.micro (Free Tier)
    Key Pair: Create new or use existing
@@ -41,8 +39,7 @@ Before starting, ensure you have:
 3. **Network Settings**
    - Create security group with following rules:
      - SSH (22): Your IP only
-     - HTTP (80): 0.0.0.0/0
-     - HTTPS (443): 0.0.0.0/0 (optional)
+     - HTTP (5000): 0.0.0.0/0 (Flask default port)
      - MySQL (3306): Security group only (for internal access)
 
 4. **Storage**
@@ -62,46 +59,44 @@ ssh -i your-key.pem ubuntu@YOUR_PUBLIC_IP
 sudo apt update && sudo apt upgrade -y
 ```
 
-## Software Installation
+## Python/Flask Installation
 
 ### Step 3: Install Required Packages
 
 ```bash
-# Install Apache, PHP, MySQL, and development tools
-sudo apt install -y apache2 php php-mysql mysql-server git curl wget unzip
+# Install Python, MySQL, and development tools
+sudo apt install -y python3 python3-pip python3-venv mysql-server git curl wget
+sudo apt install -y build-essential python3-dev default-libmysqlclient-dev pkg-config
 
-# Install additional PHP extensions
-sudo apt install -y php-curl php-gd php-mbstring php-xml php-zip
-
-# Install ModSecurity and dependencies
-sudo apt install -y libapache2-mod-security2 modsecurity-crs
-
-# Enable Apache modules
-sudo a2enmod rewrite
-sudo a2enmod ssl
-sudo a2enmod headers
-sudo a2enmod security2
-sudo a2enmod unique_id
-
-# Restart Apache
-sudo systemctl restart apache2
+# Verify Python installation
+python3 --version
+pip3 --version
 ```
 
-### Step 4: Verify Installation
+### Step 4: Setup Application Environment
 
 ```bash
-# Check Apache status
-sudo systemctl status apache2
+# Create application directory
+sudo mkdir -p /opt/cybersecurity_attack
+sudo chown ubuntu:ubuntu /opt/cybersecurity_attack
+cd /opt/cybersecurity_attack
 
-# Check PHP version
-php -v
+# Clone the repository
+git clone https://github.com/rahulrk03/cybersecurity_attack.git .
 
-# Check MySQL status
-sudo systemctl status mysql
+# Create Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
 
 # Test web server
 curl http://localhost
 ```
+
+## Database Configuration
 
 ## Database Configuration
 
@@ -119,92 +114,82 @@ sudo mysql_secure_installation
 # - Reload privilege tables: YES
 ```
 
-### Step 6: Create Database and User
+### Step 6: Setup Database with Python Script
 
 ```bash
-# Login to MySQL as root
-sudo mysql -u root -p
+# Navigate to application directory
+cd /opt/cybersecurity_attack
+source venv/bin/activate
 
-# Execute the following SQL commands:
+# Run the database setup script
+python3 setup_database.py
+
+# Enter your MySQL root password when prompted
+# The script will:
+# - Create the cybersecurity_demo database
+# - Create the demo_user with appropriate permissions
+# - Create necessary tables (users, login_attempts, security_events)
+# - Insert sample data for testing
 ```
 
-```sql
--- Create database
-CREATE DATABASE cybersecurity_demo;
+## Application Deployment
 
--- Create demo user
-CREATE USER 'demo_user'@'localhost' IDENTIFIED BY 'StrongPassword123!';
-
--- Grant privileges
-GRANT SELECT, INSERT, UPDATE ON cybersecurity_demo.* TO 'demo_user'@'localhost';
-FLUSH PRIVILEGES;
-
--- Use the database
-USE cybersecurity_demo;
-
--- Create users table
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert test users
-INSERT INTO users (username, password, email) VALUES 
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com'),
-('demo', 'demo123', 'demo@example.com'),
-('guest', 'guest123', 'guest@example.com');
-
--- Exit MySQL
-EXIT;
-```
-
-## Web Server Configuration
-
-### Step 7: Configure Apache Virtual Host
+### Step 7: Configure Flask Application
 
 ```bash
-# Create document root
-sudo mkdir -p /var/www/html/cybersecurity_attack
+# Ensure you're in the application directory with venv activated
+cd /opt/cybersecurity_attack
+source venv/bin/activate
 
-# Set permissions
-sudo chown -R www-data:www-data /var/www/html/cybersecurity_attack
-sudo chmod -R 755 /var/www/html/cybersecurity_attack
-
-# Create virtual host configuration
-sudo nano /etc/apache2/sites-available/cybersecurity-demo.conf
+# Test the application locally first
+python3 app.py
 ```
 
-Add the following configuration:
+The Flask application will start on port 5000. You should see output like:
+```
+* Running on all addresses (0.0.0.0)
+* Running on http://127.0.0.1:5000
+* Running on http://[your-private-ip]:5000
+```
 
-```apache
-<VirtualHost *:80>
-    ServerAdmin admin@example.com
-    ServerName YOUR_PUBLIC_IP
-    DocumentRoot /var/www/html/cybersecurity_attack
-    
-    <Directory /var/www/html/cybersecurity_attack>
-        Options -Indexes +FollowSymLinks
-        AllowOverride None
-        Require all granted
-    </Directory>
-    
-    # Security headers
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-XSS-Protection "1; mode=block"
-    
-    ErrorLog ${APACHE_LOG_DIR}/cybersecurity_demo_error.log
-    CustomLog ${APACHE_LOG_DIR}/cybersecurity_demo_access.log combined
-</VirtualHost>
+### Step 8: Setup Production Service (Optional)
+
+For production deployment, create a systemd service:
+
+```bash
+# Create service file
+sudo nano /etc/systemd/system/cybersecurity-demo.service
+```
+
+Add the following content:
+
+```ini
+[Unit]
+Description=Cybersecurity Demo Flask Application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/cybersecurity_attack
+ExecStart=/opt/cybersecurity_attack/venv/bin/python app.py
+Restart=always
+RestartSec=3
+Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ```bash
-# Enable site and disable default
-sudo a2ensite cybersecurity-demo.conf
-sudo a2dissite 000-default.conf
+# Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable cybersecurity-demo
+sudo systemctl start cybersecurity-demo
+
+# Check status
+sudo systemctl status cybersecurity-demo
+```
 
 # Test configuration
 sudo apache2ctl configtest
@@ -213,105 +198,56 @@ sudo apache2ctl configtest
 sudo systemctl restart apache2
 ```
 
-## ModSecurity WAF Setup
-
-### Step 8: Configure ModSecurity
-
-```bash
-# Copy ModSecurity configuration
-sudo cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf
-
-# Edit ModSecurity configuration
-sudo nano /etc/modsecurity/modsecurity.conf
-```
-
-Modify the following settings:
-
-```
-SecRuleEngine On
-SecAuditEngine RelevantOnly
-SecAuditLogParts ABDEFHIJZ
-SecAuditLogType Serial
-SecAuditLog /var/log/apache2/modsec_audit.log
-```
-
-### Step 9: Configure OWASP Core Rule Set
-
-```bash
-# Enable OWASP CRS
-sudo ln -s /usr/share/modsecurity-crs /etc/apache2/conf-available/
-
-# Create custom rules file
-sudo nano /etc/apache2/conf-available/modsecurity-custom.conf
-```
-
-Add custom rules from the `modsecurity_rules.conf` file in this repository.
-
-```bash
-# Enable ModSecurity configuration
-sudo a2enconf modsecurity
-sudo a2enconf modsecurity-custom
-
-# Test and restart Apache
-sudo apache2ctl configtest
-sudo systemctl restart apache2
-```
-
-## Application Deployment
-
-### Step 10: Deploy Application Files
-
-```bash
-# Clone the repository
-cd /tmp
-git clone https://github.com/rahulrk03/cybersecurity_attack.git
-
-# Copy files to web directory
-sudo cp /tmp/cybersecurity_attack/*.html /var/www/html/cybersecurity_attack/
-sudo cp /tmp/cybersecurity_attack/*.php /var/www/html/cybersecurity_attack/
-
-# Set proper permissions
-sudo chown -R www-data:www-data /var/www/html/cybersecurity_attack
-sudo chmod -R 644 /var/www/html/cybersecurity_attack/*
-sudo chmod 755 /var/www/html/cybersecurity_attack
-
-# Create logs directory
-sudo mkdir -p /var/www/html/cybersecurity_attack/logs
-sudo chown www-data:www-data /var/www/html/cybersecurity_attack/logs
-sudo chmod 755 /var/www/html/cybersecurity_attack/logs
-```
-
-### Step 11: Update Database Configuration
-
-```bash
-# Edit PHP files to update database credentials
-sudo nano /var/www/html/cybersecurity_attack/vulnerable_login.php
-sudo nano /var/www/html/cybersecurity_attack/protected_login.php
-```
-
-Update the database configuration in both files:
-
-```php
-$host = 'localhost';
-$dbname = 'cybersecurity_demo';
-$db_username = 'demo_user';
-$db_password = 'StrongPassword123!';  // Use your actual password
-```
-
 ## Testing and Verification
 
-### Step 12: Test the Application
+### Step 9: Test the Application
 
-1. **Access the application**
+1. **Access the Flask application**
    ```
-   http://YOUR_PUBLIC_IP/page1.html  (Vulnerable form)
-   http://YOUR_PUBLIC_IP/page2.html  (Protected form)
+   http://YOUR_PUBLIC_IP:5000/              (Home page)
+   http://YOUR_PUBLIC_IP:5000/vulnerable    (Vulnerable form)
+   http://YOUR_PUBLIC_IP:5000/protected     (Protected form)
    ```
 
 2. **Test SQL Injection on Vulnerable Form**
+   - Navigate to: `http://YOUR_PUBLIC_IP:5000/vulnerable`
    - Username: `admin' OR '1'='1' --`
    - Password: `anything`
-   - Should succeed and show vulnerability
+   - Should succeed and demonstrate the vulnerability
+
+3. **Test Protection on Secured Form**
+   - Navigate to: `http://YOUR_PUBLIC_IP:5000/protected`
+   - Try the same SQL injection payload
+   - Should be blocked by input validation
+
+4. **Test Normal Login**
+   - Use credentials: `demo` / `demo123`
+   - Should work on both forms
+
+### Step 10: Monitor Application Logs
+
+```bash
+# View application logs
+cd /opt/cybersecurity_attack
+
+# Check vulnerable endpoint logs
+tail -f vulnerable_log.txt
+
+# Check protected endpoint logs  
+tail -f protected_log.txt
+
+# Check attack logs
+tail -f attack_log.txt
+```
+
+### Step 11: Run Automated Tests
+
+```bash
+# Run the test suite
+cd /opt/cybersecurity_attack
+source venv/bin/activate
+python3 test_app.py
+```
 
 3. **Test SQL Injection on Protected Form**
    - Same payload should be blocked by ModSecurity
@@ -342,6 +278,8 @@ sudo tail -f /var/log/apache2/php_errors.log
 
 ### Important Security Notes
 
+## Security Considerations
+
 ⚠️ **WARNING**: This setup includes intentionally vulnerable code for educational purposes.
 
 **Production Security Measures:**
@@ -351,17 +289,16 @@ sudo tail -f /var/log/apache2/php_errors.log
    # Enable UFW firewall
    sudo ufw enable
    sudo ufw allow 22/tcp    # SSH
-   sudo ufw allow 80/tcp    # HTTP
-   sudo ufw allow 443/tcp   # HTTPS
+   sudo ufw allow 5000/tcp  # Flask application
    ```
 
 2. **SSL/TLS Setup** (Recommended for production)
    ```bash
-   # Install Certbot for Let's Encrypt
-   sudo apt install certbot python3-certbot-apache
+   # Install Nginx as reverse proxy for SSL termination
+   sudo apt install nginx certbot python3-certbot-nginx
    
    # Get SSL certificate (requires domain name)
-   sudo certbot --apache -d your-domain.com
+   sudo certbot --nginx -d your-domain.com
    ```
 
 3. **Regular Updates**
@@ -371,10 +308,11 @@ sudo tail -f /var/log/apache2/php_errors.log
    sudo dpkg-reconfigure unattended-upgrades
    ```
 
-4. **Backup Strategy**
-   - Regular database backups
-   - Configuration file backups
-   - Log rotation setup
+4. **Application Security**
+   - Change default Flask secret key in production
+   - Use environment variables for sensitive configuration
+   - Implement proper logging and monitoring
+   - Regular security assessments
 
 ## Troubleshooting
 

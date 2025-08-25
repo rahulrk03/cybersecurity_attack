@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# deploy.sh - Quick deployment script for Ubuntu/Debian systems
+# deploy.sh - Python/Flask deployment script for Ubuntu/Debian systems
 # This script automates the basic setup for the cybersecurity demonstration
 
 set -e  # Exit on error
 
-echo "🚀 Cybersecurity Attack Demo - Quick Deployment Script"
-echo "========================================================="
+echo "🚀 Cybersecurity Attack Demo - Python/Flask Deployment Script"
+echo "=============================================================="
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,150 +37,99 @@ fi
 print_status "Updating system packages..."
 sudo apt update && sudo apt upgrade -y
 
-# Install required packages
-print_status "Installing Apache, PHP, MySQL, and ModSecurity..."
-sudo apt install -y apache2 php php-mysql mysql-server git curl wget unzip
-sudo apt install -y php-curl php-gd php-mbstring php-xml php-zip
-sudo apt install -y libapache2-mod-security2 modsecurity-crs
+# Install required packages for Python/Flask
+print_status "Installing Python, MySQL, and required packages..."
+sudo apt install -y python3 python3-pip python3-venv mysql-server git curl wget
+sudo apt install -y build-essential python3-dev default-libmysqlclient-dev pkg-config
 
-# Enable Apache modules
-print_status "Enabling Apache modules..."
-sudo a2enmod rewrite ssl headers security2 unique_id
-
-# Create web directory
-print_status "Setting up web directory..."
-sudo mkdir -p /var/www/html/cybersecurity_attack
-sudo chown -R www-data:www-data /var/www/html/cybersecurity_attack
-sudo chmod -R 755 /var/www/html/cybersecurity_attack
+# Create application directory
+print_status "Setting up application directory..."
+APP_DIR="/opt/cybersecurity_attack"
+sudo mkdir -p $APP_DIR
+sudo chown $USER:$USER $APP_DIR
 
 # Copy application files
 print_status "Copying application files..."
-if [ -f "page1.html" ]; then
-    sudo cp *.html /var/www/html/cybersecurity_attack/
-    sudo cp *.php /var/www/html/cybersecurity_attack/
-    sudo chown -R www-data:www-data /var/www/html/cybersecurity_attack
-    sudo chmod -R 644 /var/www/html/cybersecurity_attack/*
-    sudo chmod 755 /var/www/html/cybersecurity_attack
+if [ -f "app.py" ]; then
+    cp app.py setup_database.py requirements.txt $APP_DIR/
+    cp *.md $APP_DIR/ 2>/dev/null || true
+    cp *.sql $APP_DIR/ 2>/dev/null || true
+    cp test_app.py $APP_DIR/ 2>/dev/null || true
     print_status "Application files copied successfully"
 else
-    print_warning "Application files not found in current directory"
+    print_warning "app.py not found in current directory"
     print_warning "Please ensure you're running this script from the project directory"
-fi
-
-# Configure Apache virtual host
-print_status "Configuring Apache virtual host..."
-PUBLIC_IP=$(curl -s http://checkip.amazonaws.com/ || echo "localhost")
-
-sudo tee /etc/apache2/sites-available/cybersecurity-demo.conf > /dev/null <<EOF
-<VirtualHost *:80>
-    ServerAdmin admin@example.com
-    ServerName $PUBLIC_IP
-    DocumentRoot /var/www/html/cybersecurity_attack
-    
-    <Directory /var/www/html/cybersecurity_attack>
-        Options -Indexes +FollowSymLinks
-        AllowOverride None
-        Require all granted
-        
-        <Files "*.conf">
-            Require all denied
-        </Files>
-        <Files "*.sql">
-            Require all denied
-        </Files>
-        <Files "*.log">
-            Require all denied
-        </Files>
-    </Directory>
-    
-    # Security headers
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-XSS-Protection "1; mode=block"
-    
-    ErrorLog \${APACHE_LOG_DIR}/cybersecurity_demo_error.log
-    CustomLog \${APACHE_LOG_DIR}/cybersecurity_demo_access.log combined
-</VirtualHost>
-EOF
-
-# Enable site
-sudo a2ensite cybersecurity-demo.conf
-sudo a2dissite 000-default.conf
-
-# Configure ModSecurity
-print_status "Configuring ModSecurity..."
-sudo cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf
-sudo sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/modsecurity/modsecurity.conf
-
-# Copy custom ModSecurity rules if available
-if [ -f "modsecurity_rules.conf" ]; then
-    sudo cp modsecurity_rules.conf /etc/apache2/conf-available/
-    sudo a2enconf modsecurity_rules
-    print_status "Custom ModSecurity rules installed"
-fi
-
-# Enable ModSecurity
-sudo a2enconf modsecurity
-
-# Test Apache configuration
-print_status "Testing Apache configuration..."
-if sudo apache2ctl configtest; then
-    print_status "Apache configuration test passed"
-else
-    print_error "Apache configuration test failed"
     exit 1
 fi
 
-# Restart Apache
-print_status "Restarting Apache..."
-sudo systemctl restart apache2
+# Create Python virtual environment
+print_status "Creating Python virtual environment..."
+cd $APP_DIR
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+print_status "Installing Python dependencies..."
+pip install -r requirements.txt
+
+# Make scripts executable
+chmod +x setup_database.py
+chmod +x app.py
+
+# Get public IP
+PUBLIC_IP=$(curl -s http://checkip.amazonaws.com/ || echo "localhost")
 
 # MySQL setup reminder
-print_warning "========================================================="
+print_warning "=============================================================="
 print_warning "MANUAL STEPS REQUIRED:"
 print_warning "1. Secure MySQL installation:"
 print_warning "   sudo mysql_secure_installation"
 print_warning ""
-print_warning "2. Create database and user:"
-print_warning "   sudo mysql -u root -p < database_setup.sql"
+print_warning "2. Setup database (run from $APP_DIR):"
+print_warning "   cd $APP_DIR"
+print_warning "   source venv/bin/activate"
+print_warning "   python3 setup_database.py"
 print_warning ""
-print_warning "3. Update database credentials in PHP files:"
-print_warning "   - Edit vulnerable_login.php"
-print_warning "   - Edit protected_login.php"
+print_warning "3. Start the Flask application:"
+print_warning "   python3 app.py"
 print_warning ""
-print_warning "4. Test the setup:"
-print_warning "   http://$PUBLIC_IP/test_setup.php"
-print_warning ""
-print_warning "5. Access the applications:"
-print_warning "   - Vulnerable: http://$PUBLIC_IP/page1.html"
-print_warning "   - Protected:  http://$PUBLIC_IP/page2.html"
-print_warning "========================================================="
+print_warning "4. Access the application:"
+print_warning "   - Home: http://$PUBLIC_IP:5000/"
+print_warning "   - Vulnerable: http://$PUBLIC_IP:5000/vulnerable"
+print_warning "   - Protected: http://$PUBLIC_IP:5000/protected"
+print_warning "=============================================================="
 
-print_status "Basic deployment completed!"
+print_status "Python/Flask deployment completed!"
 print_status "Please complete the manual steps above before testing."
 
 # Create a simple status check
 cat > /tmp/deployment_status.txt <<EOF
-Cybersecurity Demo Deployment Status
-====================================
+Cybersecurity Demo - Python/Flask Deployment Status
+==================================================
 
 Date: $(date)
 Server IP: $PUBLIC_IP
+Application Directory: $APP_DIR
 
 Installed Components:
-- Apache2: $(apache2 -v | head -n1)
-- PHP: $(php -v | head -n1)
+- Python: $(python3 --version)
+- pip: $(pip --version)
 - MySQL: $(mysql --version)
-- ModSecurity: $(dpkg -l | grep libapache2-mod-security2 | awk '{print $3}')
+
+Application Structure:
+- Flask app: $APP_DIR/app.py
+- Database setup: $APP_DIR/setup_database.py
+- Virtual environment: $APP_DIR/venv/
 
 Next Steps:
-1. Complete MySQL setup with database_setup.sql
-2. Update database credentials in PHP files
-3. Test with: http://$PUBLIC_IP/test_setup.php
+1. Complete MySQL setup with setup_database.py
+2. Start Flask application: python3 app.py
+3. Test at: http://$PUBLIC_IP:5000/
 
 URLs:
-- Vulnerable: http://$PUBLIC_IP/page1.html
-- Protected:  http://$PUBLIC_IP/page2.html
+- Home: http://$PUBLIC_IP:5000/
+- Vulnerable: http://$PUBLIC_IP:5000/vulnerable
+- Protected: http://$PUBLIC_IP:5000/protected
 EOF
 
 print_status "Deployment status saved to /tmp/deployment_status.txt"

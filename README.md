@@ -24,17 +24,16 @@ This project demonstrates the difference between vulnerable and secure web appli
 
 ```
 cybersecurity_attack/
-├── app.py                       # Main Flask application
-├── setup_database.py            # Database setup script
+├── app.py                       # Main Flask application (Python)
+├── setup_database.py            # Database setup script (Python)
+├── test_app.py                  # Automated testing script
 ├── requirements.txt             # Python dependencies
+├── PYTHON_GUIDE.md              # Quick start guide for beginners
 ├── database_setup.sql           # MySQL database setup script (legacy)
-├── vulnerable_login.php         # Legacy PHP vulnerable backend
-├── protected_login.php          # Legacy PHP secure backend
-├── page1.html                   # Legacy HTML form (now integrated)
-├── page2.html                   # Legacy HTML form (now integrated)
 ├── modsecurity_rules.conf       # ModSecurity WAF rules
 ├── apache_config.conf           # Apache virtual host configuration
 ├── aws_deployment_guide.md      # AWS deployment guide
+├── deploy.sh                    # Automated deployment script
 └── README.md                    # This file
 ```
 
