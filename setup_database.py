@@ -4,69 +4,48 @@ Database setup script for cybersecurity attack demonstration (Python version)
 This script creates the database, tables, and sample data for the Flask application.
 """
 
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 from werkzeug.security import generate_password_hash
 import json
+import os
 from datetime import datetime
 
 # Database configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',  # Use root for setup
-    'password': '',  # Set your MySQL root password here
-}
+DB_PATH = 'cybersecurity_demo.db'
 
-DB_NAME = 'cybersecurity_demo'
-DB_USER = 'demo_user'
-DB_PASSWORD = 'demo_password'
-
-def create_database_and_user():
-    """Create database and user"""
+def create_database():
+    """Create SQLite database file"""
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        cursor = connection.cursor()
+        # Remove existing database file if it exists
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+            print(f"✅ Existing database '{DB_PATH}' removed")
         
-        # Create database
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}")
-        print(f"✅ Database '{DB_NAME}' created successfully")
+        # Create new database connection (file will be created automatically)
+        connection = sqlite3.connect(DB_PATH)
+        connection.close()
+        print(f"✅ Database '{DB_PATH}' created successfully")
+        return True
         
-        # Create user and grant privileges
-        cursor.execute(f"CREATE USER IF NOT EXISTS '{DB_USER}'@'localhost' IDENTIFIED BY '{DB_PASSWORD}'")
-        cursor.execute(f"GRANT SELECT, INSERT, UPDATE ON {DB_NAME}.* TO '{DB_USER}'@'localhost'")
-        cursor.execute("FLUSH PRIVILEGES")
-        print(f"✅ User '{DB_USER}' created and permissions granted")
-        
-    except Error as e:
-        print(f"❌ Error creating database/user: {e}")
+    except Exception as e:
+        print(f"❌ Error creating database: {e}")
         return False
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-    
-    return True
 
 def setup_tables():
     """Create tables and insert sample data"""
-    db_config = DB_CONFIG.copy()
-    db_config['database'] = DB_NAME
-    db_config['user'] = DB_USER
-    db_config['password'] = DB_PASSWORD
-    
     try:
-        connection = mysql.connector.connect(**db_config)
+        connection = sqlite3.connect(DB_PATH)
         cursor = connection.cursor()
         
         # Create users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username VARCHAR(50) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
                 email VARCHAR(100),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP NULL
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_login DATETIME NULL
             )
         ''')
         print("✅ Users table created")
@@ -74,11 +53,11 @@ def setup_tables():
         # Create login_attempts table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS login_attempts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username VARCHAR(50),
                 ip_address VARCHAR(45),
-                success BOOLEAN DEFAULT FALSE,
-                attempt_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                success INTEGER DEFAULT 0,
+                attempt_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                 user_agent TEXT
             )
         ''')
@@ -87,13 +66,13 @@ def setup_tables():
         # Create security_events table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS security_events (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_type VARCHAR(50),
                 ip_address VARCHAR(45),
                 description TEXT,
-                severity ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') DEFAULT 'MEDIUM',
-                event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                additional_data JSON
+                severity TEXT DEFAULT 'MEDIUM' CHECK(severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+                event_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                additional_data TEXT
             )
         ''')
         print("✅ Security events table created")
@@ -117,7 +96,7 @@ def setup_tables():
         ]
         
         cursor.executemany(
-            "INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
+            "INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
             sample_users
         )
         print("✅ Sample users inserted")
@@ -130,7 +109,7 @@ def setup_tables():
         ]
         
         cursor.executemany(
-            "INSERT INTO security_events (event_type, ip_address, description, severity) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO security_events (event_type, ip_address, description, severity) VALUES (?, ?, ?, ?)",
             sample_events
         )
         print("✅ Sample security events inserted")
@@ -151,11 +130,11 @@ def setup_tables():
         print(f"  - demo/demo123 (plain text - for vulnerable demo)")
         print(f"  - guest/guest123 (plain text - for vulnerable demo)")
         
-    except Error as e:
+    except Exception as e:
         print(f"❌ Error setting up tables: {e}")
         return False
     finally:
-        if connection.is_connected():
+        if connection:
             cursor.close()
             connection.close()
     
@@ -164,19 +143,12 @@ def setup_tables():
 def main():
     """Main setup function"""
     print("🚀 Setting up cybersecurity demonstration database...")
-    print("⚠️  Make sure MySQL is running and you have root access")
+    print("ℹ️  Using SQLite database (no setup required)")
     print()
     
-    # Get MySQL root password from user
-    import getpass
-    global DB_CONFIG
-    root_password = getpass.getpass("Enter MySQL root password (press Enter if no password): ")
-    if root_password:
-        DB_CONFIG['password'] = root_password
-    
-    # Create database and user
-    if not create_database_and_user():
-        print("❌ Failed to create database and user")
+    # Create database
+    if not create_database():
+        print("❌ Failed to create database")
         return
     
     # Setup tables
